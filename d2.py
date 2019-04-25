@@ -7,7 +7,7 @@ import subprocess
 import requests
 from tabulate import tabulate
 
-version = "0.1"
+version = "0.2"
 
 
 def http_get_json(url, params=None, is_json=True, encoding="utf8"):
@@ -32,6 +32,10 @@ def cli(args):
             except KeyError as e:
                 print(e)
                 sys.eixt(1)
+
+    if args.pure:
+        print(data)
+        return
 
     headers = args.include_fields
     headers = headers or (data and list(data[0].keys()))
@@ -64,7 +68,7 @@ def write_to_less(text, line_numbers):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("url")
-    parser.add_argument("-p", "--data-path")
+    parser.add_argument("-d", "--data-path")
     parser.add_argument("-e", "--exclude-fields", nargs="*")
     parser.add_argument("-i", "--include-fields", nargs="*")
     parser.add_argument(
@@ -93,6 +97,7 @@ def main():
             "textile",
         ],
     )
+    parser.add_argument("-p", "--pure", action="store_true")
     args = parser.parse_args()
     cli(args)
 
