@@ -10,7 +10,7 @@ import json
 import requests
 from tabulate import tabulate
 
-version = "0.5"
+version = "0.6"
 
 
 def http_get_json(url, params=None, is_json=True, encoding="utf8"):
@@ -95,6 +95,8 @@ def parse_params(args, name):
         return text
 
     origin = getattr(args, name)
+    if not origin:
+        return
 
     t1 = r"'.+'"
     t2 = r'".+"'
