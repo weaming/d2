@@ -10,7 +10,7 @@ import json
 import requests
 from tabulate import tabulate
 
-version = "0.4"
+version = "0.5"
 
 
 def http_get_json(url, params=None, is_json=True, encoding="utf8"):
@@ -113,6 +113,8 @@ def parse_params(args, name):
         values = [x for i, x in enumerate(groups) if i % 2 == 1]
         params = {}
         for k, v in zip(keys, values):
+            if None in [k, v]:
+                continue
             # support list
             if k in params:
                 if not isinstance(params, list):
