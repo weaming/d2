@@ -9,7 +9,7 @@ import json
 import requests
 from tabulate import tabulate
 
-version = "0.3"
+version = "0.4"
 
 
 def http_get_json(url, params=None, is_json=True, encoding="utf8"):
@@ -36,13 +36,14 @@ def cli(args):
                 sys.eixt(1)
 
     if args.pure:
-        print(
-            json.dumps(
-                data,
-                ensure_ascii=False,
-                indent=int(os.getenv("JSON_INDENT", 0)) or None,
-            )
+        out = json.dumps(
+            data, ensure_ascii=False, indent=int(os.getenv("JSON_INDENT", 0)) or None
         )
+        if args.jq:
+            write_to_jq(out)
+        else:
+            print(out)
+
         return
 
     headers = args.include_fields
@@ -55,6 +56,17 @@ def cli(args):
     data = [[str(x[k]) for k in headers if k not in args.exclude_fields] for x in data]
     out = tabulate(data, headers=headers, tablefmt=args.format)
     write_to_less(out, True)
+
+
+def write_to_jq(text):
+    cmd = ["jq"]
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+
+    try:
+        p.stdin.write(text.encode("utf-8"))
+    except BrokenPipeError as e:
+        print(e)
+        sys.exit(1)
 
 
 def write_to_less(text, line_numbers):
@@ -78,7 +90,9 @@ def main():
         description="Get API and show results in table or origin text format"
     )
     parser.add_argument("url")
-    parser.add_argument("-d", "--data-path")
+    parser.add_argument(
+        "-d", "--data-path", help="path to extract data from origin response"
+    )
     parser.add_argument("-e", "--exclude-fields", nargs="*")
     parser.add_argument("-i", "--include-fields", nargs="*")
     parser.add_argument(
@@ -106,8 +120,17 @@ def main():
             "latex_booktabs",
             "textile",
         ],
+        help="`tabulate` format",
     )
-    parser.add_argument("-p", "--pure", action="store_true")
+    parser.add_argument(
+        "-p", "--pure", action="store_true", help="print origin JSON response"
+    )
+    parser.add_argument(
+        "-j",
+        "--jq",
+        action="store_true",
+        help="write to jq to highlight JSON, combine with -p",
+    )
     args = parser.parse_args()
     cli(args)
 
