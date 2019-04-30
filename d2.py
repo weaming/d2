@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import os
 import sys
 import argparse
 import subprocess
+import json
 import requests
 from tabulate import tabulate
 
-version = "0.2"
+version = "0.3"
 
 
 def http_get_json(url, params=None, is_json=True, encoding="utf8"):
@@ -34,7 +36,13 @@ def cli(args):
                 sys.eixt(1)
 
     if args.pure:
-        print(data)
+        print(
+            json.dumps(
+                data,
+                ensure_ascii=False,
+                indent=int(os.getenv("JSON_INDENT", 0)) or None,
+            )
+        )
         return
 
     headers = args.include_fields
@@ -66,7 +74,9 @@ def write_to_less(text, line_numbers):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Get API and show results in table or origin text format"
+    )
     parser.add_argument("url")
     parser.add_argument("-d", "--data-path")
     parser.add_argument("-e", "--exclude-fields", nargs="*")
