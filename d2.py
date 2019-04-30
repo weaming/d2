@@ -3,6 +3,7 @@
 
 import os
 import sys
+import re
 import argparse
 import subprocess
 import json
@@ -23,7 +24,7 @@ def http_get_json(url, params=None, is_json=True, encoding="utf8"):
 
 
 def cli(args):
-    err, data = http_get_json(args.url)
+    err, data = http_get_json(args.url, args.params)
     if err:
         print(err)
         sys.exit(1)
@@ -85,6 +86,53 @@ def write_to_less(text, line_numbers):
     p.communicate()
 
 
+def parse_params(args, name):
+    def remove_quote(text):
+        if not text:
+            return text
+        if text[0] == text[-1] and text[0] in ['"', "'"]:
+            return text[1:-1]
+        return text
+
+    origin = getattr(args, name)
+
+    t1 = r"'.+'"
+    t2 = r'".+"'
+    t3 = r"\S+"
+    t123 = "{t1}|{t2}|{t3}".format(t1=t1, t2=t2, t3=t3)
+    pat = "(({t})=({t}))( ({t})=({t}))*".format(t=t123)
+    reg = re.compile(pat)
+    result = reg.search(origin)
+    if result:
+        groups = result.groups()
+        groups = [x for i, x in enumerate(groups) if i % 3 in [1, 2]]
+        # remove quotes
+        groups = [remove_quote(x) for x in groups]
+
+        keys = [x for i, x in enumerate(groups) if i % 2 == 0]
+        values = [x for i, x in enumerate(groups) if i % 2 == 1]
+        params = {}
+        for k, v in zip(keys, values):
+            # support list
+            if k in params:
+                if not isinstance(params, list):
+                    params[k] = [params[k], v]
+                else:
+                    params[k].append(v)
+            else:
+                params[k] = v
+
+        DEBUG = os.getenv("DEBUG")
+        if DEBUG:
+            print(groups)
+            print(keys)
+            print(values)
+            print(params)
+
+        # update property
+        setattr(args, name, params)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Get API and show results in table or origin text format"
@@ -131,7 +179,13 @@ def main():
         action="store_true",
         help="write to jq to highlight JSON, combine with -p",
     )
+    parser.add_argument(
+        "--params",
+        help="""params passed to requests in format `a=b ' a b c'=" a 2 b "`""",
+    )
     args = parser.parse_args()
+
+    parse_params(args, "params")
     cli(args)
 
 
