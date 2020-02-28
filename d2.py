@@ -10,7 +10,7 @@ import json
 import requests
 from tabulate import tabulate
 
-version = "0.6"
+version = "0.7"
 
 
 def http_get_json(url, params=None, is_json=True, encoding="utf8"):
@@ -34,7 +34,7 @@ def cli(args):
                 data = data[x]
             except KeyError as e:
                 print(e)
-                sys.eixt(1)
+                sys.exit(1)
 
     if args.pure:
         out = json.dumps(
@@ -145,8 +145,8 @@ def main():
     parser.add_argument(
         "-d", "--data-path", help="path to extract data from origin response"
     )
-    parser.add_argument("-e", "--exclude-fields", nargs="*")
-    parser.add_argument("-i", "--include-fields", nargs="*")
+    parser.add_argument("-e", "--exclude-fields", nargs="*", default=[])
+    parser.add_argument("-i", "--include-fields", nargs="*", default=[])
     parser.add_argument(
         "-f",
         "--format",
